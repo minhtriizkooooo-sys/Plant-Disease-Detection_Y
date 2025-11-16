@@ -1,0 +1,48 @@
+# Cài đặt YOLOv5 và các thư viện cần thiết
+!pip install -U yolov5
+!pip install torch torchvision
+
+import torch
+import os
+import shutil
+
+# Tắt hoàn toàn W&B bằng cách thiết lập biến môi trường
+import os
+os.environ["WANDB_MODE"] = "dryrun"  # Tắt hoàn toàn W&B
+
+# Tạo nội dung của file data.yaml
+yaml_content = """
+train: /content/drive/MyDrive/Colab Notebooks/Yolo_Plant_Disease_Dataset/train/images
+val: /content/drive/MyDrive/Colab Notebooks/Yolo_Plant_Disease_Dataset/test/images
+
+nc: 2  # Số lượng lớp
+names: ['healthy', 'disease']  # Tên các lớp
+"""
+
+# Lưu nội dung vào file data.yaml
+yaml_file_path = '/content/drive/MyDrive/Colab Notebooks/Yolo_Plant_Disease_Dataset/data.yaml'
+with open(yaml_file_path, 'w') as f:
+    f.write(yaml_content)
+
+print(f"File {yaml_file_path} đã được tạo và lưu thành công!")
+
+# Đảm bảo rằng thư mục chứa mô hình đã huấn luyện tồn tại
+weights_dir = 'runs/train/exp/weights'
+if not os.path.exists(weights_dir):
+    os.makedirs(weights_dir)
+
+# Lệnh huấn luyện YOLOv5 với đường dẫn đúng và tắt W&B (sử dụng `--no-wandb` và bỏ tham số `--no-hub`)
+!python3 -m yolov5.train --img 416 --batch 8 --epochs 15 --data "{yaml_file_path}" --weights yolov5s.pt --cache --save-period 10 --project "/content/drive/MyDrive/Colab Notebooks/Yolo_Plant_Disease_Dataset/runs" --name exp --no-wandb
+
+# Đảm bảo rằng mô hình tốt nhất đã được lưu tại best.pt
+best_model_path = 'runs/train/exp/weights/best.pt'
+# Đường dẫn trong Google Drive nơi bạn muốn lưu mô hình
+drive_model_path = '/content/drive/MyDrive/Colab Notebooks/Yolo_Plant_Disease_Dataset/best_model/best.pt'
+
+# Kiểm tra nếu mô hình đã được lưu và di chuyển mô hình sang Google Drive
+if os.path.exists(best_model_path):
+    # Di chuyển mô hình từ thư mục huấn luyện vào thư mục trong Google Drive
+    shutil.move(best_model_path, drive_model_path)
+    print(f'Mô hình đã được di chuyển thành công vào: {drive_model_path}')
+else:
+    print("Có lỗi xảy ra trong quá trình lưu mô hình.")
